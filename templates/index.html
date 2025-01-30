@@ -1,0 +1,30 @@
+<!-- templates/index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Raspberry Pi QR Code Detector</title>
+    <style>
+        body {
+            text-align: center;
+            background-color: #f2f2f2;
+            font-family: Arial, sans-serif;
+        }
+        h1 {
+            color: #333;
+            margin-top: 20px;
+        }
+        img {
+            width: 80%;
+            max-width: 800px;
+            border: 2px solid #333;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Raspberry Pi QR Code Detector</h1>
+    <img src="{{ url_for('video_feed') }}" alt="Video Feed">
+</body>
+</html>
