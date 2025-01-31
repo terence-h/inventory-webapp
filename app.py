@@ -1,17 +1,23 @@
 # app.py
-from flask import Flask, render_template, redirect, url_for, request, flash, jsonify
+import datetime
+from flask import Flask, Response, render_template, redirect, session, url_for, request, flash, jsonify
+from flask_socketio import SocketIO, emit
 from flask_login import LoginManager, login_user, login_required, logout_user, UserMixin, current_user
 from picamera2 import Picamera2
 from pyzbar.pyzbar import decode
 from PIL import Image, ImageDraw, ImageFont
+from dateutil import parser
 import io
 import requests
 import json
+import threading
 
 from buzz import buzz
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Replace with a secure key
+
+socketio = SocketIO(app, async_mode='threading')
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -32,10 +38,8 @@ picam2 = Picamera2()
 picam2.configure(picam2.create_preview_configuration(main={"format": "RGB888", "size": (640, 480)}))
 picam2.start()
 
-buzz(0.2)
-
 # API Server URL
-API_URL = 'http://BACKEND_PC_IP:PORT/api'  # Replace with your backend API URL
+API_URL = 'https://192.168.18.90:7109/api'  # Replace with your backend API URL
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -45,10 +49,10 @@ def login():
         password = request.form.get('password')
 
         # Authenticate user via .NET API
-        response = requests.post(f'{API_URL}/login', json={'username': username, 'password': password})
+        response = requests.post(f'{API_URL}/account/login', json={'username': username, 'password': password}, verify=False)
 
         if response.status_code == 200:
-            user_id = response.json().get('user_id')
+            user_id = response.json().get('Username')
             user = User(user_id)
             login_user(user)
             flash('Logged in successfully.', 'success')
@@ -62,12 +66,14 @@ def login():
 @login_required
 def logout():
     logout_user()
+    session.pop('_flashes', None)
     flash('Logged out successfully.', 'success')
     return redirect(url_for('login'))
 
 @app.route('/')
 @login_required
 def index():
+    session.pop('_flashes', None)
     return render_template('index.html')
 
 @app.route('/add', methods=['GET', 'POST'])
@@ -75,8 +81,10 @@ def index():
 def add():
     if request.method == 'POST':
         # Get form data
-        product_json = request.form.get('product_json')
+        # product_json = request.form.get('product_json')
         quantity = request.form.get('quantity')
+        form = request.form
+        print(form)
 
         try:
             product_data = json.loads(product_json)
@@ -86,7 +94,7 @@ def add():
             return redirect(url_for('add'))
 
         # Send data to .NET API
-        response = requests.post(f'{API_URL}/products', json=product_data)
+        response = requests.post(f'{API_URL}/Product/addproduct', json=product_data)
 
         if response.status_code == 201:
             flash('Product added successfully.', 'success')
@@ -161,29 +169,54 @@ def gen_frames():
         draw = ImageDraw.Draw(image)
         font = ImageFont.load_default()
 
+        valid_qr_detected = False  # Flag to check if a valid QR code is detected
+        qr_data = {}
+
         for obj in decoded_objects:
             # Parse JSON data from QR code
             try:
                 qr_data = json.loads(obj.data.decode('utf-8'))
-                product_id = qr_data.get('productId')
+                productNo = qr_data.get('productNo')
+                productName = qr_data.get('productName')
+                manufacturer = qr_data.get('manufacturer')
                 batch_no = qr_data.get('batchNo')
-                mfg_date = qr_data.get('mfgDate')
-                mfg_expiry = qr_data.get('mfgExpiry', '')
+                quantity = qr_data.get('quantity')
+                category_id = qr_data.get('categoryId')
+                mfg_date_original = qr_data.get('mfgDate')
+                mfg_expiry_original = qr_data.get('mfgExpiryDate', '')
+                mfg_date = convert_to_input_date_format(mfg_date_original)
+                mfg_expiry = convert_to_input_date_format(mfg_expiry_original) if mfg_expiry_original else ''
 
-                # Optional: Automatically add or check inventory
                 # Example: Automatically add to inventory
                 # response = requests.post(f'{API_URL}/products', json=qr_data)
 
-            except json.JSONDecodeError:
-                product_id = batch_no = mfg_date = mfg_expiry = 'Invalid QR Code'
+                valid_qr_detected = True  # Set flag if valid JSON is detected
 
-            # Get bounding box coordinates
-            (x, y, w, h) = obj.rect
-            # Draw rectangle around QR code
-            draw.rectangle([(x, y), (x + w, y + h)], outline="green", width=2)
-            # Annotate the QR code with decoded data
-            text = f"ID: {product_id}\nBatch: {batch_no}"
-            draw.text((x, y - 10), text, fill="green", font=font)
+            except json.JSONDecodeError:
+                error = 'Invalid QR Code'
+
+            # # Get bounding box coordinates
+            # (x, y, w, h) = obj.rect
+            # # Draw rectangle around QR code
+            # draw.rectangle([(x, y), (x + w, y + h)], outline="green", width=2)
+            # # Annotate the QR code with decoded data
+            # text = f"ID: {product_id}\nBatch: {batch_no}"
+            # draw.text((x, y - 10), text, fill="green", font=font)
+
+        if valid_qr_detected:
+            # Emit SocketIO event to notify client
+            data_to_emit = {
+                'productNo': productNo,
+                'productName': productName,
+                'manufacturer': manufacturer,
+                'batchNo': batch_no,
+                'quantity': quantity,
+                'categoryId': category_id,
+                'mfgDate': mfg_date,
+                'mfgExpiryDate': mfg_expiry
+            }
+            socketio.emit('qr_detected', {'data': data_to_emit})
+            buzz()
 
         # Convert PIL Image to JPEG
         buf = io.BytesIO()
@@ -194,8 +227,20 @@ def gen_frames():
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
+
+def convert_to_input_date_format(date_str):
+    if not date_str:
+        return ""
+    try:
+        parsed_date = parser.isoparse(date_str)
+        return parsed_date.strftime("%Y-%m-%d")
+    except (ValueError, TypeError) as e:
+        return ""
+
 if __name__ == '__main__':
     try:
-        app.run(host='0.0.0.0', port=5000, threaded=True)
+        # app.run(host='0.0.0.0', port=5000)
+        # threading.Thread(target=background_gen_frames, daemon=True).start()
+        socketio.run(app, host='0.0.0.0', port=5000)
     finally:
         picam2.close()

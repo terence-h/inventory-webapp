@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %} - Inventory System</title>
+    <link href="../static/css/output.css" rel="stylesheet">
+    <style>
+        .sidebar-closed {
+            transform: translateX(-100%);
+        }
+        .sidebar-open {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen">
+        <!-- Toggle Button -->
+        <button id="sidebarToggle" class="fixed z-[49] top-6 left-6 p-6 bg-gray-800 text-white rounded-lg shadow-lg">
+            <svg id="menuIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+            <svg id="closeIcon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+
+        <!-- Sidebar -->
+        <div id="sidebar" class="fixed z-40 w-64 h-full bg-gray-800 text-white p-4 transition-transform duration-300 sidebar-closed">
+            <div class="mt-24">
+                <h2 class="text-2xl font-bold mb-6">Inventory System</h2>
+                <nav>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="{{ url_for('index') }}" 
+                               class="flex items-center px-4 py-2 rounded hover:bg-gray-700 {% if request.path == url_for('index') %}bg-gray-700{% endif %}">
+                                <span class="ml-2">View All Products</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('add') }}" 
+                               class="flex items-center px-4 py-2 rounded hover:bg-gray-700 {% if request.path == url_for('add') %}bg-gray-700{% endif %}">
+                                <span class="ml-2">Add Product</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('logout') }}" 
+                               class="flex items-center px-4 py-2 rounded hover:bg-gray-700">
+                                <span class="ml-2">Logout</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div id="mainContent" class="p-8 transition-all duration-300">
+            {% block content %}{% endblock %}
+        </div>
+        {% block others %}{% endblock %}
+    </div>
+
+    <script src="../static/js/socket.io.min.js"></script>
+    <script>
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const menuIcon = document.getElementById('menuIcon');
+        const closeIcon = document.getElementById('closeIcon');
+
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('sidebar-closed');
+            sidebar.classList.toggle('sidebar-open');
+            
+            // Toggle icons
+            menuIcon.classList.toggle('hidden');
+            closeIcon.classList.toggle('hidden');
+        });
+
+        // Close sidebar by default
+        sidebar.classList.add('sidebar-closed');
+        menuIcon.classList.remove('hidden');
+        closeIcon.classList.add('hidden');
+    </script>
+
+    {% block scripts %}
+    {% endblock %}
+</body>
+</html>

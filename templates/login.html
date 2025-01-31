@@ -9,13 +9,23 @@
 </head>
 <body class="bg-gray-100 flex items-center justify-center h-screen">
     <div class="bg-white p-8 rounded shadow-md w-96">
-        <h2 class="text-2xl font-bold mb-6 text-center">Inventory Login</h2>
+        <h2 class="text-2xl font-bold mb-6 text-center">Inventory System Login</h2>
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for category, message in messages %}
-              <div class="mb-4 text-sm text-{{ 'red' if category == 'danger' else 'green' }}-600">
-                {{ message }}
-              </div>
+              {% if category == 'danger' %}
+                <div class="mb-4 text-sm text-red-600 text-center">
+                  {{message}}
+                </div>
+              {% elif category == 'success' %}
+                <div class="mb-4 text-sm text-green-600 text-center">
+                  {{message}}
+                </div>
+              {% else %}
+                <div class="mb-4 text-sm text-center">
+                  {{message}}
+                </div>
+              {% endif %}
             {% endfor %}
           {% endif %}
         {% endwith %}
