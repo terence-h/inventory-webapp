@@ -1,6 +1,7 @@
 # app.py
 import datetime
 from flask import Flask, Response, render_template, redirect, session, url_for, request, flash, jsonify
+import flask
 from flask_socketio import SocketIO, emit
 from flask_login import LoginManager, login_user, login_required, logout_user, UserMixin, current_user
 from picamera2 import Picamera2
@@ -39,7 +40,7 @@ picam2.configure(picam2.create_preview_configuration(main={"format": "RGB888", "
 picam2.start()
 
 # API Server URL
-API_URL = 'https://192.168.18.90:7109/api'  # Replace with your backend API URL
+API_URL = 'http://192.168.18.90:5201/api'  # Replace with your backend API URL
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -74,35 +75,71 @@ def logout():
 @login_required
 def index():
     session.pop('_flashes', None)
-    return render_template('index.html')
+
+    categories_response = requests.get(f'{API_URL}/Category/getcategories')
+    categories = categories_response.json() if categories_response.status_code == 200 else []
+
+    query_params = {
+        'productNo': request.args.get('productNo'),
+        'productName': request.args.get('productName'),
+        'manufacturer': request.args.get('manufacturer'),
+        'batchNo': request.args.get('batchNo'),
+        'quantity': request.args.get('quantity'),
+        'categoryId': request.args.get('categoryId'),
+        'mfgDateFrom': request.args.get('mfgDateFrom'),
+        'mfgDateTo': request.args.get('mfgDateTo'),
+        'mfgExpiryDateFrom': request.args.get('mfgExpiryDateFrom'),
+        'mfgExpiryDateTo': request.args.get('mfgExpiryDateTo'),
+        'addedOn': request.args.get('addedOn'),
+        'page': request.args.get('page')
+    }
+
+    # Remove any parameters that are None or empty
+    query_params = {k: v for k, v in query_params.items() if v}
+
+    # Pass the parameters to the API call
+    response = requests.get(f'{API_URL}/Product/getProducts', params=query_params)
+    data = response.json() if response.status_code == 200 else []
+
+    products = data.get('items', [])
+    current_page = data.get('currentPage', 1)
+    total_pages = data.get('totalPages', 1)
+
+    return render_template('index.html',
+                           products=products,
+                           categories=categories,
+                           current_page=current_page,
+                           total_pages=total_pages)
 
 @app.route('/add', methods=['GET', 'POST'])
 @login_required
 def add():
     if request.method == 'POST':
         # Get form data
-        # product_json = request.form.get('product_json')
-        quantity = request.form.get('quantity')
-        form = request.form
-        print(form)
+        form_data = request.form.to_dict()
 
         try:
-            product_data = json.loads(product_json)
-            product_data['quantity'] = int(quantity)
+            form_data['quantity'] = int(form_data.get('quantity', 0))
         except (json.JSONDecodeError, ValueError) as e:
             flash('Invalid input data.', 'danger')
             return redirect(url_for('add'))
 
         # Send data to .NET API
-        response = requests.post(f'{API_URL}/Product/addproduct', json=product_data)
+        response = requests.post(f'{API_URL}/Product/addproduct', json=form_data)
 
-        if response.status_code == 201:
+        if response.status_code == 200:
             flash('Product added successfully.', 'success')
             return redirect(url_for('index'))
         else:
-            flash('Failed to add product.', 'danger')
+            json_message = json.loads(response.text)
+            message = json_message['message'] if 'message' in json_message and json_message['message'] is not None else 'Failed to add product.'
+            flash(message, 'danger')
+    
+    # Get categories from API
+    categories_response = requests.get(f'{API_URL}/Category/getcategories')
+    categories = categories_response.json() if categories_response.status_code == 200 else []
 
-    return render_template('add.html')
+    return render_template('add.html', categories=categories)
 
 @app.route('/update/<product_id>', methods=['GET', 'POST'])
 @login_required
@@ -217,6 +254,7 @@ def gen_frames():
             }
             socketio.emit('qr_detected', {'data': data_to_emit})
             buzz()
+            break
 
         # Convert PIL Image to JPEG
         buf = io.BytesIO()

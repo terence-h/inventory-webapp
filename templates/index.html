@@ -4,6 +4,135 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-<h1 class="text-3xl bg-sky-500 underline">Raspberry Pi QR Code Detector</h1>
-<img src="{{ url_for('video_feed') }}" alt="Video Feed">
+<form method="get" action="" class="mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label for="productNo" class="block text-sm font-medium text-gray-700">Product No.</label>
+        <input type="text" name="productNo" id="productNo" 
+               value="{{ request.args.get('productNo', '') }}"
+               class="px-3 py-3 border rounded border-gray-700">
+      </div>
+      <div>
+        <label for="productName" class="block text-sm font-medium text-gray-700">Product Name</label>
+        <input type="text" name="productName" id="productName" 
+               value="{{ request.args.get('productName', '') }}"
+               class="px-3 py-3 border rounded border-gray-700">
+      </div>
+      <div>
+        <label for="manufacturer" class="block text-sm font-medium text-gray-700">Manufacturer</label>
+        <input type="text" name="manufacturer" id="manufacturer" 
+               value="{{ request.args.get('manufacturer', '') }}"
+               class="px-3 py-3 border rounded border-gray-700">
+      </div>
+      <div>
+        <label for="batchNo" class="block text-sm font-medium text-gray-700">Batch No.</label>
+        <input type="text" name="batchNo" id="batchNo" 
+               value="{{ request.args.get('batchNo', '') }}"
+               class="px-3 py-3 border rounded border-gray-700">
+      </div>
+      <div>
+        <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
+        <input type="number" name="quantity" id="quantity" 
+               value="{{ request.args.get('quantity', '') }}"
+               class="px-3 py-3 border rounded border-gray-700" min="0">
+      </div>
+      <div>
+        <label for="categoryId" class="block text-sm font-medium text-gray-700">Category</label>
+        <select name="categoryId" id="categoryId" class="px-3 py-3 border rounded border-gray-700">
+            <option value="">All</option>
+            {% for category in categories %}
+            <option value="{{ category.categoryId }}">{{ category.categoryName }}</option>
+            {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="mfgDateFrom" class="block text-sm font-medium text-gray-700">Mfg Date From</label>
+        <input type="date" name="mfgDateFrom" id="mfgDateFrom" 
+               value="{{ request.args.get('mfgDateFrom', '') }}"
+               class="px-3 py-3 border rounded border-gray-700">
+      </div>
+      <div>
+        <label for="mfgDateTo" class="block text-sm font-medium text-gray-700">Mfg Date To</label>
+        <input type="date" name="mfgDateTo" id="mfgDateTo" 
+               value="{{ request.args.get('mfgDateTo', '') }}"
+               class="px-3 py-3 border rounded border-gray-700">
+      </div>
+      <div>
+        <label for="mfgExpiryDateFrom" class="block text-sm font-medium text-gray-700">Expiry Date From</label>
+        <input type="date" name="mfgExpiryDateFrom" id="mfgExpiryDateFrom" 
+               value="{{ request.args.get('mfgExpiryDateFrom', '') }}"
+               class="px-3 py-3 border rounded border-gray-700">
+      </div>
+      <div>
+        <label for="mfgExpiryDateTo" class="block text-sm font-medium text-gray-700">Expiry Date To</label>
+        <input type="date" name="mfgExpiryDateTo" id="mfgExpiryDateTo" 
+               value="{{ request.args.get('mfgExpiryDateTo', '') }}"
+               class="px-3 py-3 border rounded border-gray-700">
+      </div>
+      <div>
+        <label for="addedOn" class="block text-sm font-medium text-gray-700">Added On</label>
+        <input type="date" name="addedOn" id="addedOn" 
+               value="{{ request.args.get('addedOn', '') }}"
+               class="px-3 py-3 border rounded border-gray-700">
+      </div>
+    </div>
+    <div class="mt-4">
+      <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded">Search</button>
+    </div>
+  </form>
+
+  <!-- Products Table -->
+  <div class="overflow-x-auto rounded-lg border">
+    <table class="min-w-full table-auto border-collapse">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product No.</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product Name</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Manufacturer</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Batch No.</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mfg Date</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expiry Date</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Added On</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        {% for product in products %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ loop.index }}</td>
+            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ product.productNo }}</td>
+            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ product.productName }}</td>
+            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ product.manufacturer }}</td>
+            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ product.batchNo }}</td>
+            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ product.quantity }}</td>
+            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ product.categoryName }}</td>
+            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.mfgDate }}</td>
+            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.mfgExpiryDate }}</td>
+            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.addedOn }}</td>
+            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500"><a href="#" class="bg-blue-500 text-white px-5 py-3 rounded mr-2 hover:bg-blue-600">Edit</a><a href="#" class="bg-red-500 text-white px-5 py-3 rounded hover:bg-red-600">Delete</a></td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="9" class="px-4 py-4 text-center text-gray-500">No products found</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+   <!-- Pagination Controls -->
+   <div class="flex justify-center items-center mt-4">
+    {% if current_page > 1 %}
+    <a href="{{ url_for('index', **dict(request.args.to_dict(), page=current_page-1)) }}"
+         class="px-5 py-4 bg-gray-300 rounded mr-2">Previous</a>
+    {% endif %}
+    <span class="px-4 py-2">Page {{ current_page }} of {{ total_pages }}</span>
+    {% if current_page < total_pages %}
+    <a href="{{ url_for('index', **dict(request.args.to_dict(), page=current_page+1)) }}"
+         class="px-5 py-4 bg-gray-300 rounded ml-2">Next</a>
+    {% endif %}
+  </div>
 {% endblock %}
