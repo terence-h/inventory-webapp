@@ -32,7 +32,7 @@
             <div class="mt-24 text-center">
                 <h2 class="text-2xl font-bold mb-6">Inventory System</h2>
                 <nav>
-                    <ul class="space-y-2">
+                    <ul class="space-y-5">
                         <li>
                             <a href="{{ url_for('index') }}" 
                                class="flex items-center px-4 py-2 rounded hover:bg-gray-700 {% if request.path == url_for('index') %}bg-gray-700{% endif %}">
@@ -46,6 +46,12 @@
                             </a>
                         </li>
                         <li>
+                            <a href="{{ url_for('generateqr') }}" 
+                               class="flex items-center px-4 py-2 rounded hover:bg-gray-700 {% if request.path == url_for('generateqr') %}bg-gray-700{% endif %}">
+                                <span class="ml-2">Generate QR Code</span>
+                            </a>
+                        </li>
+                        <li class="mt-10">
                             <a href="{{ url_for('logout') }}" 
                                class="flex items-center px-4 py-2 rounded hover:bg-gray-700">
                                 <span class="ml-2">Logout</span>

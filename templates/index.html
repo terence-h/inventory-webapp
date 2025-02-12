@@ -4,6 +4,7 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
+
 <form method="get" action="" class="mb-6" id="filterForm">
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
     <div>
@@ -142,6 +143,20 @@
     </tbody>
   </table>
 </div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="my-4">
+      {% for category, message in messages %}
+        <div class="mb-4 {{ 
+          'text-green-600' if category == 'success' else 'text-red-600' 
+        }}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
 
 <!-- Pagination Controls -->
 <div class="flex justify-center items-center mt-4">

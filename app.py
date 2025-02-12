@@ -1,5 +1,5 @@
 # app.py
-from flask import Flask, Response, render_template, redirect, session, url_for, request, flash, jsonify
+from flask import Flask, Response, render_template, redirect, send_file, session, url_for, request, flash, jsonify
 from flask_socketio import SocketIO, emit
 from flask_login import LoginManager, login_user, login_required, logout_user, UserMixin, current_user
 from picamera2 import Picamera2
@@ -9,8 +9,10 @@ from dateutil import parser
 import io
 import requests
 import json
+import base64
 
 from buzz import buzz
+from generate_qr_code import generate_qr_code
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Replace with a secure key
@@ -53,7 +55,7 @@ def login():
             user_id = response.json().get('Username')
             user = User(user_id)
             login_user(user)
-            flash('Logged in successfully.', 'success')
+            session.pop('_flashes', None)
             return redirect(url_for('index'))
         else:
             flash('Invalid username or password.', 'danger')
@@ -71,7 +73,7 @@ def logout():
 @app.route('/')
 @login_required
 def index():
-    session.pop('_flashes', None)
+    # session.pop('_flashes', None)
 
     categories_response = requests.get(f'{API_URL}/Category/getcategories')
     categories = categories_response.json() if categories_response.status_code == 200 else []
@@ -193,9 +195,73 @@ def delete(product_id):
     if response.status_code == 200:
         flash(response_json['message'], 'success')
     else:
-        flash(response_json['message'], 'danger')
+        flash(response_json['message'], 'error')
 
     return jsonify(response_json), response.status_code
+
+@app.route('/generateqr', methods=['GET', 'POST'])
+@login_required
+def generateqr():
+    if request.method == 'POST':
+        # Get form data
+        form_data = request.form.to_dict()
+
+        for date_field in ['mfgDate', 'mfgExpiryDate']:
+            if not form_data.get(date_field):
+                form_data[date_field] = None
+
+        try:
+            form_data['quantity'] = int(form_data.get('quantity', 0))
+        except (json.JSONDecodeError, ValueError) as e:
+            flash('Invalid input data.', 'danger')
+            return redirect(url_for('generateqr'))
+        
+        # Generate QR code image
+        img = generate_qr_code(form_data)
+        
+        # Save image to bytes buffer
+        img_buffer = io.BytesIO()
+        img.save(img_buffer, format='PNG')
+        img_buffer.seek(0)
+        img_base64 = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
+
+        categories_response = requests.get(f'{API_URL}/Category/getcategories')
+        categories = categories_response.json() if categories_response.status_code == 200 else []
+
+        return render_template('generateqr.html', 
+                             categories=categories,
+                             qr_image=img_base64,
+                             message='QR code generated successfully')
+    
+    # Get categories from API
+    categories_response = requests.get(f'{API_URL}/Category/getcategories')
+    categories = categories_response.json() if categories_response.status_code == 200 else []
+
+    return render_template('generateqr.html', categories=categories)
+
+@app.route('/qrcode')
+@login_required
+def qr_code():
+    product_data = {
+        "productNo": "BEV-001",
+        "productName": "Cold Brew Coffee",
+        "manufacturer": "Brew Masters",
+        "batchNo": "B2023-06",
+        "quantity": 427,
+        "categoryId": 5,
+        "mfgDate": "2024-09-11",
+        "mfgExpiryDate": "2025-10-26"
+    }
+    
+    # Generate QR code image
+    img = generate_qr_code(product_data)
+    
+    # Save image to bytes buffer
+    img_buffer = io.BytesIO()
+    img.save(img_buffer, format='PNG')
+    img_buffer.seek(0)
+    
+    return send_file(img_buffer, mimetype='image/png')
 
 @app.route('/video_feed')
 @login_required
