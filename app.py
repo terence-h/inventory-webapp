@@ -187,13 +187,15 @@ def edit(productId):
 @app.route('/delete/<product_id>', methods=['DELETE'])
 @login_required
 def delete(product_id):
-    # Send delete request to .NET API
-    response = requests.delete(f'{API_URL}/products/{product_id}')
+    response = requests.delete(f'{API_URL}/Product/deleteProduct/{product_id}')
+    response_json = response.json()
 
     if response.status_code == 200:
-        return jsonify({'message': 'Product deleted successfully.'}), 200
+        flash(response_json['message'], 'success')
     else:
-        return jsonify({'message': 'Failed to delete product.'}), 400
+        flash(response_json['message'], 'danger')
+
+    return jsonify(response_json), response.status_code
 
 @app.route('/video_feed')
 @login_required

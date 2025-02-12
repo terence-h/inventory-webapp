@@ -4,7 +4,7 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-<form method="get" action="" class="mb-6">
+<form method="get" action="" class="mb-6" id="filterForm">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
         <label for="productNo" class="block text-sm font-medium text-gray-700">Product No.</label>
@@ -47,18 +47,19 @@
         <select name="categoryId" id="categoryId" class="px-3 py-3 border rounded border-gray-700">
             <option value="">All</option>
             {% for category in categories %}
-            <option value="{{ category.categoryId }}">{{ category.categoryName }}</option>
+            {% set selectedCategoryId = request.args.get('categoryId', '') %}
+            <option value="{{ category.categoryId }}" {% if selectedCategoryId and selectedCategoryId|int == category.categoryId %}selected{% endif %}>{{ category.categoryName }}</option>
             {% endfor %}
         </select>
       </div>
       <div>
-        <label for="mfgDateFrom" class="block text-sm font-medium text-gray-700">Mfg Date From</label>
+        <label for="mfgDateFrom" class="block text-sm font-medium text-gray-700">Manufacturer Date From</label>
         <input type="date" name="mfgDateFrom" id="mfgDateFrom" 
                value="{{ request.args.get('mfgDateFrom', '') }}"
                class="px-3 py-3 border rounded border-gray-700">
       </div>
       <div>
-        <label for="mfgDateTo" class="block text-sm font-medium text-gray-700">Mfg Date To</label>
+        <label for="mfgDateTo" class="block text-sm font-medium text-gray-700">Manufacturer Date To</label>
         <input type="date" name="mfgDateTo" id="mfgDateTo" 
                value="{{ request.args.get('mfgDateTo', '') }}"
                class="px-3 py-3 border rounded border-gray-700">
@@ -83,7 +84,8 @@
       </div> -->
     </div>
     <div class="mt-4">
-      <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded">Search</button>
+      <button type="submit" class="px-5 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Search</button>
+      <button type="button" id="resetFilters" class="ml-3 px-5 py-2 bg-red-500 hover:bg-red-600 text-white rounded">Reset</button>
     </div>
   </form>
 
@@ -108,7 +110,7 @@
       <tbody class="bg-white divide-y divide-gray-200">
         {% for product in products %}
           <tr class="hover:bg-gray-50">
-            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ loop.index }}</td>
+            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ loop.index + ((current_page - 1) * 10) }}</td>
             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ product.productNo }}</td>
             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ product.productName }}</td>
             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ product.manufacturer }}</td>
@@ -120,12 +122,20 @@
             <!-- <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.addedOn }}</td> -->
             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
               <a href="{{ url_for('edit', productId=product.productId) }}" class="bg-blue-500 text-white px-5 py-3 rounded mr-2 hover:bg-blue-600">Edit</a>
-              <a href="#" class="bg-red-500 text-white px-5 py-3 rounded hover:bg-red-600">Delete</a>
+              <a href="#" 
+                data-product-id="{{ product.productId }}"
+                data-product-no="{{ product.productNo }}"
+                data-product-name="{{ product.productName }}"
+                data-manufacturer="{{ product.manufacturer }}"
+                data-batch-no="{{ product.batchNo }}"
+                class="delete-btn bg-red-500 text-white px-5 py-3 rounded hover:bg-red-600">
+                Delete
+              </a>
             </td>
           </tr>
         {% else %}
           <tr>
-            <td colspan="9" class="px-4 py-4 text-center text-gray-500">No products found</td>
+            <td colspan="10" class="px-4 py-4 text-center text-gray-500">No products found</td>
           </tr>
         {% endfor %}
       </tbody>
@@ -144,4 +154,106 @@
          class="px-5 py-4 bg-gray-300 rounded ml-2">Next</a>
     {% endif %}
   </div>
+{% endblock %}
+
+{% block others %}
+<div id="modal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-50 hidden">
+    <div id="modalContent" class="rounded-lg overflow-hidden shadow-lg">
+        <p>test-one-two-three</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+  const modal = document.getElementById('modal');
+  const modalContent = document.getElementById('modalContent');
+
+  function closeModal() {
+    modal.classList.add('hidden');
+  }
+
+  function openModal() {
+    modal.classList.remove('hidden');
+  }
+
+  // Close modal when clicking outside of modal content
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) {
+      closeModal();
+    }
+  });
+
+  // Close modal with the 'Escape' key
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closeModal();
+    }
+  });
+
+    const resetFilters = document.getElementById('resetFilters');
+
+    resetFilters.addEventListener('click', () => {
+      window.location.href = window.location.pathname;
+    });
+
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', function(event) {
+        event.preventDefault();
+        
+        const productId = this.dataset.productId;
+        const productNo = this.dataset.productNo;
+        const productName = this.dataset.productName;
+        const manufacturer = this.dataset.manufacturer;
+        const batchNo = this.dataset.batchNo;
+
+        modalContent.innerHTML = `
+          <div class="bg-white p-6 rounded-lg">
+            <h2 class="text-xl font-bold mb-4">Confirm Deletion</h2>
+            <p>Are you sure you want to delete the following product?</p>
+            <ul class="mb-4">
+              <li><strong>Product No:</strong> ${productNo}</li>
+              <li><strong>Product Name:</strong> ${productName}</li>
+              <li><strong>Manufacturer:</strong> ${manufacturer}</li>
+              <li><strong>Batch No:</strong> ${batchNo}</li>
+            </ul>
+            <div class="flex justify-end">
+              <button id="confirmDelete" class="bg-red-500 text-white px-4 py-2 rounded mr-2">Delete</button>
+              <button id="cancelDelete" class="bg-gray-500 text-white px-4 py-2 rounded">Cancel</button>
+            </div>
+          </div>
+        `;
+        
+        openModal();
+        
+        document.getElementById('confirmDelete').addEventListener('click', async () => {
+          try {
+            const response = await fetch(`/delete/${productId}`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+
+            console.log(response);
+
+            if (response.ok) {
+              const data = await response.json();
+              window.location.reload();
+            } else {
+              const errorData = await response.json();
+              console.error("Deletion failed:", errorData.message);
+            }
+          } catch (error) {
+            console.error("Error during deletion:", error);
+          }
+        });
+
+        document.getElementById('cancelDelete').addEventListener('click', () => {
+          closeModal();
+        });
+      });
+    });
+</script>
 {% endblock %}
