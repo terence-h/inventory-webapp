@@ -1,0 +1,174 @@
+<!-- templates/edit.html -->
+{% extends "base.html" %}
+
+{% block title %}Edit{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-6 pb-10">
+    <h2 class="text-3xl font-bold pb-5">Edit Product</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="mb-4 text-sm text-{{ 'red' if category == 'danger' else 'green' }}-600">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="pb-5">
+        <span class="text-red-600">*</span> indicates required field
+    </div>
+    
+    <form method="POST">
+        <input type="hidden" value="{{ product.productId }}"/>
+        <div class="mb-4">
+            <label class="block text-gray-700">Product No.<span class="text-red-600">*</span></label>
+            <input type="text" id="productNo" name="productNo" required class="w-full px-3 py-3 border rounded"
+            value="{{ product.productNo }}" />
+        </div>
+        <div class="mb-4">
+            <label class="block text-gray-700">Product Name<span class="text-red-600">*</span></label>
+            <input type="text" id="productName" name="productName" required class="w-full px-3 py-3 border rounded"
+            value="{{ product.productName }}" />
+        </div>
+        <div class="mb-4">
+            <label class="block text-gray-700">Manufacturer<span class="text-red-600">*</span></label>
+            <input type="text" id="manufacturer" name="manufacturer" required class="w-full px-3 py-3 border rounded"
+            value="{{ product.manufacturer }}" />
+        </div>
+        <div class="mb-4">
+            <label class="block text-gray-700">Batch No.<span class="text-red-600">*</span></label>
+            <input type="text" id="batchNo" name="batchNo" required class="w-full px-3 py-3 border rounded"
+            value="{{ product.batchNo }}" />
+        </div>
+        <div class="mb-4">
+            <label class="block text-gray-700">Quantity<span class="text-red-600">*</span></label>
+            <input type="number" id="quantity" name="quantity" required class="w-full px-3 py-3 border rounded" min="0"
+            value="{{ product.quantity }}">
+        </div>
+        <div class="mb-4">
+            <label class="block text-gray-700">Category<span class="text-red-600">*</span></label>
+            <select id="categoryId" name="categoryId" required class="w-full px-3 py-3 border rounded">
+                {% for category in categories %}
+                <option value="{{ category.categoryId }}" {% if product.categoryId == category.categoryId %}selected{% endif %}>{{ category.categoryName }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-4">
+            <label class="block text-gray-700">Manufactured Date</label>
+            <input type="date" id="mfgDate" name="mfgDate" class="w-full px-3 py-3 border rounded"
+            value="{{ product.mfgDate }}" />
+        </div>
+        <div class="mb-4">
+            <label class="block text-gray-700">Expiry Date</label>
+            <input type="date" id="mfgExpiryDate" name="mfgExpiryDate" class="w-full px-3 py-3 border rounded"
+            value="{{ product.mfgExpiryDate }}" />
+        </div>
+        <button type="submit" class="bg-green-500 text-white px-5 py-4 rounded hover:bg-green-600">Save Changes</button>
+        <a href="{{ url_for('index') }}" class="ml-4 bg-red-500 text-white px-5 py-4 rounded hover:bg-red-600">Cancel</a>
+    </form>
+</div>
+{% endblock %}
+
+{% block others %}
+<!-- <button id="qrScannerToggle" class="fixed z-50 bottom-8 right-14 p-6 bg-gray-800 text-white rounded-lg shadow-lg">
+    <svg id="qrIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75v-.75ZM13.5 19.5h.75v.75h-.75v-.75ZM19.5 13.5h.75v.75h-.75v-.75ZM19.5 19.5h.75v.75h-.75v-.75ZM16.5 16.5h.75v.75h-.75v-.75Z" />
+      </svg>
+      
+    <svg id="qrCloseIcon" class="w-8 h-8 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+    </svg>
+</button>
+
+<div id="modal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[49] hidden">
+    <div id="modalContent" class="rounded-lg overflow-hidden shadow-lg">
+        <img id="videoFeedImg" src="" alt="Video Feed" class="w-[640px] h-[480px]">
+    </div>
+</div> -->
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    // Get elements by ID
+    // const modalToggleBtn = document.getElementById('qrScannerToggle');
+    // const modal = document.getElementById('modal');
+    // const modalContent = document.getElementById('modalContent');
+    // const videoFeedImg = document.getElementById('videoFeedImg');
+    // const qrIcon = document.getElementById('qrIcon');
+    // const qrCloseIcon = document.getElementById('qrCloseIcon');
+
+    // const productNo = document.getElementById('productNo');
+    // const productName = document.getElementById('productName');
+    // const manufacturer = document.getElementById('manufacturer');
+    // const batchNo = document.getElementById('batchNo');
+    // const quantity = document.getElementById('quantity');
+    // const categoryId = document.getElementById('categoryId');
+    // const mfgDate = document.getElementById('mfgDate');
+    // const mfgExpiryDate = document.getElementById('mfgExpiryDate');
+
+    // var socket = io();
+
+    // // Listen for the 'qr_detected' event
+    // socket.on('qr_detected', function(msg) {
+    //     const qrData = msg.data;
+    //     //console.log('QR Code detected:', qrData);
+    //     productNo.value = qrData.productNo ?? productNo.value;
+    //     productName.value = qrData.productName ?? productName.value;
+    //     manufacturer.value = qrData.manufacturer ?? manufacturer.value;
+    //     batchNo.value = qrData.batchNo ?? batchNo.value;
+    //     quantity.value = qrData.quantity ?? quantity.value;
+    //     categoryId.value = qrData.categoryId ?? categoryId.value;
+    //     mfgDate.value = qrData.mfgDate ?? mfgDate.value;
+    //     mfgExpiryDate.value = qrData.mfgExpiryDate ?? mfgExpiryDate.value;
+    //     closeModal();
+    // });
+
+    // function closeModal() {
+    //     modal.classList.add('hidden');
+    //     videoFeedImg.src = "";
+    //     qrCloseIcon.classList.toggle('hidden');
+    //     qrIcon.classList.toggle('hidden');
+    // }
+
+    // function openModal() {
+    //     modal.classList.remove('hidden');
+    //     videoFeedImg.src = "{{ url_for('video_feed') }}";
+    //     qrCloseIcon.classList.toggle('hidden');
+    //     qrIcon.classList.toggle('hidden');
+    // }
+
+    // // Function to open the modal
+    // modalToggleBtn.addEventListener('click', () => {
+    //     if (modal.classList.contains('hidden')) {
+    //         openModal();
+    //     } else {
+    //         closeModal();
+    //     }
+    // });
+
+    // // Function to close the modal when clicking outside the modal content
+    // modal.addEventListener('click', (event) => {
+    //     if (event.target === modal) {
+    //         closeModal();
+    //     }
+    // });
+
+    // // Optional: Close modal with the 'Escape' key
+    // document.addEventListener('keydown', (event) => {
+    //     if (event.key === 'Escape') {
+    //         closeModal();
+    //     }
+    // });
+
+    // function formatDateForDisplay(dateStr) {
+    //         if (!dateStr) return '';
+    //         var parts = dateStr.split('-');
+    //         if (parts.length !== 3) return dateStr; // Return original if format is unexpected
+    //         return parts[2] + '-' + parts[1] + '-' + parts[0];
+    //     }
+</script>
+{% endblock %}

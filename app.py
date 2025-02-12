@@ -1,17 +1,14 @@
 # app.py
-import datetime
 from flask import Flask, Response, render_template, redirect, session, url_for, request, flash, jsonify
-import flask
 from flask_socketio import SocketIO, emit
 from flask_login import LoginManager, login_user, login_required, logout_user, UserMixin, current_user
 from picamera2 import Picamera2
 from pyzbar.pyzbar import decode
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 from dateutil import parser
 import io
 import requests
 import json
-import threading
 
 from buzz import buzz
 
@@ -84,13 +81,14 @@ def index():
         'productName': request.args.get('productName'),
         'manufacturer': request.args.get('manufacturer'),
         'batchNo': request.args.get('batchNo'),
-        'quantity': request.args.get('quantity'),
+        'quantityFrom': request.args.get('quantityFrom'),
+        'quantityTo': request.args.get('quantityTo'),
         'categoryId': request.args.get('categoryId'),
         'mfgDateFrom': request.args.get('mfgDateFrom'),
         'mfgDateTo': request.args.get('mfgDateTo'),
         'mfgExpiryDateFrom': request.args.get('mfgExpiryDateFrom'),
         'mfgExpiryDateTo': request.args.get('mfgExpiryDateTo'),
-        'addedOn': request.args.get('addedOn'),
+        # 'addedOn': request.args.get('addedOn'),
         'page': request.args.get('page')
     }
 
@@ -118,6 +116,10 @@ def add():
         # Get form data
         form_data = request.form.to_dict()
 
+        for date_field in ['mfgDate', 'mfgExpiryDate']:
+            if not form_data.get(date_field):
+                form_data[date_field] = None
+
         try:
             form_data['quantity'] = int(form_data.get('quantity', 0))
         except (json.JSONDecodeError, ValueError) as e:
@@ -125,7 +127,7 @@ def add():
             return redirect(url_for('add'))
 
         # Send data to .NET API
-        response = requests.post(f'{API_URL}/Product/addproduct', json=form_data)
+        response = requests.post(f'{API_URL}/Product/addProduct', json=form_data)
 
         if response.status_code == 200:
             flash('Product added successfully.', 'success')
@@ -141,39 +143,46 @@ def add():
 
     return render_template('add.html', categories=categories)
 
-@app.route('/update/<product_id>', methods=['GET', 'POST'])
+@app.route('/edit/<productId>', methods=['GET', 'POST'])
 @login_required
-def update(product_id):
+def edit(productId):
     if request.method == 'POST':
         # Get form data
-        product_json = request.form.get('product_json')
-        quantity = request.form.get('quantity')
+        form_data = request.form.to_dict()
+
+        for date_field in ['mfgDate', 'mfgExpiryDate']:
+            if not form_data.get(date_field):
+                form_data[date_field] = None
 
         try:
-            product_data = json.loads(product_json)
-            product_data['quantity'] = int(quantity)
+            form_data['productId'] = int(productId)
+            form_data['quantity'] = int(form_data.get('quantity', 0))
         except (json.JSONDecodeError, ValueError) as e:
             flash('Invalid input data.', 'danger')
-            return redirect(url_for('update', product_id=product_id))
+            return redirect(url_for('add'))
 
-        # Send update request to .NET API
-        response = requests.put(f'{API_URL}/products/{product_id}', json=product_data)
+        # Send data to .NET API
+        response = requests.post(f'{API_URL}/Product/editProduct', json=form_data)
 
         if response.status_code == 200:
             flash('Product updated successfully.', 'success')
-            return redirect(url_for('index'))
         else:
-            flash('Failed to update product.', 'danger')
+            json_message = json.loads(response.text)
+            message = json_message['message'] if 'message' in json_message and json_message['message'] is not None else 'Failed to add product.'
+            flash(message, 'danger')
 
     # Fetch existing product data
-    response = requests.get(f'{API_URL}/products/{product_id}')
+    response = requests.get(f'{API_URL}/Product/getProduct/{productId}')
     if response.status_code == 200:
         product = response.json()
     else:
         flash('Product not found.', 'danger')
         return redirect(url_for('index'))
+    
+    categories_response = requests.get(f'{API_URL}/Category/getcategories')
+    categories = categories_response.json() if categories_response.status_code == 200 else []
 
-    return render_template('update.html', product=product)
+    return render_template('edit.html', product=product, categories=categories)
 
 @app.route('/delete/<product_id>', methods=['DELETE'])
 @login_required
@@ -203,8 +212,8 @@ def gen_frames():
         # Detect QR codes
         decoded_objects = decode(image)
 
-        draw = ImageDraw.Draw(image)
-        font = ImageFont.load_default()
+        # draw = ImageDraw.Draw(image)
+        # font = ImageFont.load_default()
 
         valid_qr_detected = False  # Flag to check if a valid QR code is detected
         qr_data = {}
