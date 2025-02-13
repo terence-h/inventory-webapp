@@ -316,7 +316,7 @@
       document.getElementById('confirmDelete').addEventListener('click', async () => {
         try {
           const response = await fetch(`/delete/${productId}`, {
-            method: 'DELETE',
+            method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             }

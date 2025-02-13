@@ -1,7 +1,7 @@
 # app.py
 from flask import Flask, Response, render_template, redirect, send_file, session, url_for, request, flash, jsonify
 from flask_socketio import SocketIO, emit
-from flask_login import LoginManager, login_user, login_required, logout_user, UserMixin, current_user
+from flask_login import LoginManager, login_user, login_required, logout_user, UserMixin
 from picamera2 import Picamera2
 from pyzbar.pyzbar import decode
 from PIL import Image
@@ -52,10 +52,11 @@ def login():
         response = requests.post(f'{API_URL}/account/login', json={'username': username, 'password': password}, verify=False)
 
         if response.status_code == 200:
-            user_id = response.json().get('Username')
+            user_id = response.json().get('username')
             user = User(user_id)
             login_user(user)
             session.pop('_flashes', None)
+            session['username'] = user_id
             return redirect(url_for('index'))
         else:
             flash('Invalid username or password.', 'danger')
@@ -68,6 +69,13 @@ def logout():
     logout_user()
     session.pop('_flashes', None)
     flash('Logged out successfully.', 'success')
+
+    data = {
+        'username': session['username']
+    }
+    requests.post(f'{API_URL}/Account/logout', json=data)
+    session['username'] = None
+
     return redirect(url_for('login'))
 
 @app.route('/')
@@ -111,6 +119,40 @@ def index():
                            current_page=current_page,
                            total_pages=total_pages)
 
+@app.route('/logs')
+@login_required
+def logs():
+    session.pop('_flashes', None)
+
+    categories_response = requests.get(f'{API_URL}/Category/getcategories')
+    categories = categories_response.json() if categories_response.status_code == 200 else []
+
+    query_params = {
+        'auditId': request.args.get('auditId'),
+        'actionType': request.args.get('actionType'),
+        'actionBy': request.args.get('actionBy'),
+        'dateFrom': request.args.get('dateFrom'),
+        'dateTo': request.args.get('dateTo'),
+        'page': request.args.get('page')
+    }
+
+    # Remove any parameters that are None or empty
+    query_params = {k: v for k, v in query_params.items() if v}
+
+    # Pass the parameters to the API call
+    response = requests.get(f'{API_URL}/Product/getProducts', params=query_params)
+    data = response.json() if response.status_code == 200 else []
+
+    products = data.get('items', [])
+    current_page = data.get('currentPage', 1)
+    total_pages = data.get('totalPages', 1)
+
+    return render_template('logs.html',
+                           products=products,
+                           categories=categories,
+                           current_page=current_page,
+                           total_pages=total_pages)
+
 @app.route('/add', methods=['GET', 'POST'])
 @login_required
 def add():
@@ -124,16 +166,16 @@ def add():
 
         try:
             form_data['quantity'] = int(form_data.get('quantity', 0))
+            form_data['username'] = session['username']
         except (json.JSONDecodeError, ValueError) as e:
             flash('Invalid input data.', 'danger')
             return redirect(url_for('add'))
-
+        
         # Send data to .NET API
         response = requests.post(f'{API_URL}/Product/addProduct', json=form_data)
 
         if response.status_code == 200:
             flash('Product added successfully.', 'success')
-            return redirect(url_for('index'))
         else:
             json_message = json.loads(response.text)
             message = json_message['message'] if 'message' in json_message and json_message['message'] is not None else 'Failed to add product.'
@@ -159,6 +201,7 @@ def edit(productId):
         try:
             form_data['productId'] = int(productId)
             form_data['quantity'] = int(form_data.get('quantity', 0))
+            form_data['username'] = session['username']
         except (json.JSONDecodeError, ValueError) as e:
             flash('Invalid input data.', 'danger')
             return redirect(url_for('add'))
@@ -186,10 +229,14 @@ def edit(productId):
 
     return render_template('edit.html', product=product, categories=categories)
 
-@app.route('/delete/<product_id>', methods=['DELETE'])
+@app.route('/delete/<product_id>', methods=['POST'])
 @login_required
 def delete(product_id):
-    response = requests.delete(f'{API_URL}/Product/deleteProduct/{product_id}')
+    form_data = {
+        'username': session['username']
+    }
+
+    response = requests.post(f'{API_URL}/Product/deleteProduct/{product_id}', json=form_data)
     response_json = response.json()
 
     if response.status_code == 200:
@@ -239,29 +286,27 @@ def generateqr():
 
     return render_template('generateqr.html', categories=categories)
 
-@app.route('/qrcode')
-@login_required
-def qr_code():
-    product_data = {
-        "productNo": "BEV-001",
-        "productName": "Cold Brew Coffee",
-        "manufacturer": "Brew Masters",
-        "batchNo": "B2023-06",
-        "quantity": 427,
-        "categoryId": 5,
-        "mfgDate": "2024-09-11",
-        "mfgExpiryDate": "2025-10-26"
-    }
+# @app.route('/qrcode')
+# @login_required
+# def qr_code():
+#     product_data = {
+#         "productNo": "BEV-001",
+#         "productName": "Cold Brew Coffee",
+#         "manufacturer": "Brew Masters",
+#         "batchNo": "B2023-06",
+#         "quantity": 427,
+#         "categoryId": 5,
+#         "mfgDate": "2024-09-11",
+#         "mfgExpiryDate": "2025-10-26"
+#     }
     
-    # Generate QR code image
-    img = generate_qr_code(product_data)
+#     img = generate_qr_code(product_data)
     
-    # Save image to bytes buffer
-    img_buffer = io.BytesIO()
-    img.save(img_buffer, format='PNG')
-    img_buffer.seek(0)
+#     img_buffer = io.BytesIO()
+#     img.save(img_buffer, format='PNG')
+#     img_buffer.seek(0)
     
-    return send_file(img_buffer, mimetype='image/png')
+#     return send_file(img_buffer, mimetype='image/png')
 
 @app.route('/video_feed')
 @login_required
@@ -271,23 +316,17 @@ def video_feed():
 
 def gen_frames():
     while True:
-        # Capture frame from Picamera2
         frame = picam2.capture_array()
-
-        # Convert to PIL Image
         image = Image.fromarray(frame)
-
-        # Detect QR codes
         decoded_objects = decode(image)
 
         # draw = ImageDraw.Draw(image)
         # font = ImageFont.load_default()
 
-        valid_qr_detected = False  # Flag to check if a valid QR code is detected
+        valid_qr_detected = False
         qr_data = {}
 
         for obj in decoded_objects:
-            # Parse JSON data from QR code
             try:
                 qr_data = json.loads(obj.data.decode('utf-8'))
                 productNo = qr_data.get('productNo')
@@ -301,15 +340,11 @@ def gen_frames():
                 mfg_date = convert_to_input_date_format(mfg_date_original)
                 mfg_expiry = convert_to_input_date_format(mfg_expiry_original) if mfg_expiry_original else ''
 
-                # Example: Automatically add to inventory
-                # response = requests.post(f'{API_URL}/products', json=qr_data)
-
-                valid_qr_detected = True  # Set flag if valid JSON is detected
+                valid_qr_detected = True
 
             except json.JSONDecodeError:
                 error = 'Invalid QR Code'
 
-            # # Get bounding box coordinates
             # (x, y, w, h) = obj.rect
             # # Draw rectangle around QR code
             # draw.rectangle([(x, y), (x + w, y + h)], outline="green", width=2)
@@ -318,7 +353,6 @@ def gen_frames():
             # draw.text((x, y - 10), text, fill="green", font=font)
 
         if valid_qr_detected:
-            # Emit SocketIO event to notify client
             data_to_emit = {
                 'productNo': productNo,
                 'productName': productName,
@@ -333,12 +367,10 @@ def gen_frames():
             buzz()
             break
 
-        # Convert PIL Image to JPEG
         buf = io.BytesIO()
         image.save(buf, format='JPEG')
         frame = buf.getvalue()
 
-        # Yield frame in byte format
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
