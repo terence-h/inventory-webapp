@@ -124,15 +124,15 @@ def index():
 def logs():
     session.pop('_flashes', None)
 
-    categories_response = requests.get(f'{API_URL}/Category/getcategories')
+    categories_response = requests.get(f'{API_URL}/Audit/getAuditTypes')
     categories = categories_response.json() if categories_response.status_code == 200 else []
 
     query_params = {
-        'auditId': request.args.get('auditId'),
-        'actionType': request.args.get('actionType'),
+        'auditLogId': request.args.get('auditLogId'),
+        'auditTypeId': request.args.get('auditTypeId'),
         'actionBy': request.args.get('actionBy'),
-        'dateFrom': request.args.get('dateFrom'),
-        'dateTo': request.args.get('dateTo'),
+        'startDate': request.args.get('dateFrom'),
+        'endDate': request.args.get('dateTo'),
         'page': request.args.get('page')
     }
 
@@ -140,18 +140,34 @@ def logs():
     query_params = {k: v for k, v in query_params.items() if v}
 
     # Pass the parameters to the API call
-    response = requests.get(f'{API_URL}/Product/getProducts', params=query_params)
+    response = requests.get(f'{API_URL}/Audit/getAuditLogs', params=query_params)
     data = response.json() if response.status_code == 200 else []
 
-    products = data.get('items', [])
+    audit_logs = data.get('items', [])
     current_page = data.get('currentPage', 1)
     total_pages = data.get('totalPages', 1)
 
     return render_template('logs.html',
-                           products=products,
+                           audit_logs=audit_logs,
                            categories=categories,
                            current_page=current_page,
                            total_pages=total_pages)
+
+@app.route('/logs/view/<auditId>', methods=['GET'])
+@login_required
+def view_log(auditId):
+    session.pop('_flashes', None)
+
+    categories_response = requests.get(f'{API_URL}/Audit/getAuditTypes')
+    categories = categories_response.json() if categories_response.status_code == 200 else []
+
+    # Pass the parameters to the API call
+    response = requests.get(f'{API_URL}/Audit/getAuditLog/{auditId}')
+    data = response.json() if response.status_code == 200 else []
+
+    return render_template('view.html',
+                           audit_log=data,
+                           categories=categories)
 
 @app.route('/add', methods=['GET', 'POST'])
 @login_required

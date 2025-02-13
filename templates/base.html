@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% endblock %} - Inventory System</title>
-    <link href="../static/css/output.css" rel="stylesheet">
-    <link href="../static/css/custom.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
     <style>
         .sidebar-closed {
             transform: translateX(-100%);
@@ -29,10 +29,10 @@
 
         <!-- Sidebar -->
         <div id="sidebar" class="fixed z-40 w-64 h-full bg-gray-800 text-white p-4 transition-transform duration-300 sidebar-closed">
-            <div class="mt-24 text-center">
+            <div class="mt-16 text-center">
                 <h2 class="text-2xl font-bold mb-6">Inventory System</h2>
                 <nav>
-                    <ul class="space-y-5">
+                    <ul class="space-y-4">
                         <li>
                             <a href="{{ url_for('index') }}" 
                                class="flex items-center px-4 py-2 rounded hover:bg-gray-700 {% if request.path == url_for('index') %}bg-gray-700{% endif %}">
@@ -49,6 +49,12 @@
                             <a href="{{ url_for('generateqr') }}" 
                                class="flex items-center px-4 py-2 rounded hover:bg-gray-700 {% if request.path == url_for('generateqr') %}bg-gray-700{% endif %}">
                                 <span class="ml-2">Generate QR Code</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('logs') }}" 
+                               class="flex items-center px-4 py-2 rounded hover:bg-gray-700 {% if request.path == url_for('logs') %}bg-gray-700{% endif %}">
+                                <span class="ml-2">View Logs</span>
                             </a>
                         </li>
                         <li class="mt-10">
@@ -69,7 +75,7 @@
         {% block others %}{% endblock %}
     </div>
 
-    <script src="../static/js/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
     <script>
         const sidebar = document.getElementById('sidebar');
         const sidebarToggle = document.getElementById('sidebarToggle');

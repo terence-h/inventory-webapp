@@ -16,33 +16,33 @@
     {% endif %}
     {% endwith %}
 
-    <div class="pb-5">
+    <div class="pb-5 font-bold">
         <span class="text-red-600">*</span> indicates required field
     </div>
 
     <form method="POST">
         <div class="mb-4">
-            <label class="block text-gray-700">Product No.<span class="text-red-600">*</span></label>
+            <label class="block text-gray-700 font-bold">Product No.<span class="text-red-600">*</span></label>
             <input type="text" id="productNo" name="productNo" required class="w-full px-3 py-3 border rounded" />
         </div>
         <div class="mb-4">
-            <label class="block text-gray-700">Product Name<span class="text-red-600">*</span></label>
+            <label class="block text-gray-700 font-bold">Product Name<span class="text-red-600">*</span></label>
             <input type="text" id="productName" name="productName" required class="w-full px-3 py-3 border rounded" />
         </div>
         <div class="mb-4">
-            <label class="block text-gray-700">Manufacturer<span class="text-red-600">*</span></label>
+            <label class="block text-gray-700 font-bold">Manufacturer<span class="text-red-600">*</span></label>
             <input type="text" id="manufacturer" name="manufacturer" required class="w-full px-3 py-3 border rounded" />
         </div>
         <div class="mb-4">
-            <label class="block text-gray-700">Batch No.<span class="text-red-600">*</span></label>
+            <label class="block text-gray-700 font-bold">Batch No.<span class="text-red-600">*</span></label>
             <input type="text" id="batchNo" name="batchNo" required class="w-full px-3 py-3 border rounded" />
         </div>
         <div class="mb-4">
-            <label class="block text-gray-700">Quantity<span class="text-red-600">*</span></label>
+            <label class="block text-gray-700 font-bold">Quantity<span class="text-red-600">*</span></label>
             <input type="number" id="quantity" name="quantity" required class="w-full px-3 py-3 border rounded" min="0">
         </div>
         <div class="mb-4">
-            <label class="block text-gray-700">Category<span class="text-red-600">*</span></label>
+            <label class="block text-gray-700 font-bold">Category<span class="text-red-600">*</span></label>
             <select id="categoryId" name="categoryId" required class="w-full px-3 py-3 border rounded">
                 <option value="" disabled selected>Select a category</option>
                 {% for category in categories %}
@@ -51,11 +51,11 @@
             </select>
         </div>
         <div class="mb-4">
-            <label class="block text-gray-700">Manufactured Date</label>
+            <label class="block text-gray-700 font-bold">Manufactured Date</label>
             <input type="date" id="mfgDate" name="mfgDate" class="w-full px-3 py-3 border rounded" />
         </div>
         <div class="mb-4">
-            <label class="block text-gray-700">Expiry Date</label>
+            <label class="block text-gray-700 font-bold">Expiry Date</label>
             <input type="date" id="mfgExpiryDate" name="mfgExpiryDate" class="w-full px-3 py-3 border rounded" />
         </div>
         <button type="submit" class="bg-green-500 text-white px-5 py-4 rounded hover:bg-green-600">Add Product</button>

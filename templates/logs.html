@@ -1,26 +1,26 @@
 <!-- templates/index.html -->
 {% extends "base.html" %}
 
-{% block title %}Home{% endblock %}
+{% block title %}View Logs{% endblock %}
 
 {% block content %}
 
 <form method="get" action="" class="mb-6" id="filterForm">
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
     <div>
-      <label for="auditId" class="block text-sm font-medium text-gray-700">Audit ID</label>
-      <input type="text" name="auditId" id="auditId" value="{{ request.args.get('auditId', '') }}"
+      <label for="auditLogId" class="block text-sm font-medium text-gray-700">Audit ID</label>
+      <input type="text" name="auditLogId" id="auditLogId" value="{{ request.args.get('auditLogId', '') }}"
         class="px-3 py-3 border rounded border-gray-700">
     </div>
     <div>
-      <label for="actionType" class="block text-sm font-medium text-gray-700">Action Type</label>
-      <select name="actionType" id="actionType" class="px-3 py-3 border rounded border-gray-700">
+      <label for="auditTypeId" class="block text-sm font-medium text-gray-700">Audit Type</label>
+      <select name="auditTypeId" id="auditTypeId" class="px-3 py-3 border rounded border-gray-700">
         <option value="">All</option>
-        <!-- {% for category in categories %}
-        {% set selectedCategoryId = request.args.get('categoryId', '') %}
-        <option value="{{ category.categoryId }}" {% if selectedCategoryId and
-          selectedCategoryId|int==category.categoryId %}selected{% endif %}>{{ category.categoryName }}</option>
-        {% endfor %} -->
+        {% for category in categories %}
+        {% set selectedCategoryId = request.args.get('auditTypeId', '') %}
+        <option value="{{ category.auditTypeId }}" {% if selectedCategoryId and
+          selectedCategoryId|int==category.auditTypeId %}selected{% endif %}>{{ category.name }}</option>
+        {% endfor %}
       </select>
     </div>
     <div>
@@ -53,21 +53,26 @@
       <tr>
         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Audit ID</th>
-        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Content</th>
+        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Audit Type</th>
+        <!-- <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Content</th> -->
         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action By</th>
         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date and Time</th>
+        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
       </tr>
     </thead>
     <tbody class="bg-white divide-y divide-gray-200">
-      {% for product in products %}
+      {% for log in audit_logs %}
       <tr class="hover:bg-gray-50">
         <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ loop.index + ((current_page - 1) * 10) }}</td>
-        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ product.productNo }}</td>
-        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ product.productName }}</td>
-        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ product.manufacturer }}</td>
-        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ product.mfgDate | default("-", true) }}</td>
-        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ product.mfgExpiryDate | default("-", true) }}</td>
+        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ log.auditLogId }}</td>
+        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ log.auditTypeName }}</td>
+        <!-- <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ log.auditContent }}</td> -->
+        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ log.actionBy }}</td>
+        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ log.date | default("-", true) }}</td>
+        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+          <a href="{{ url_for('view_log', auditId=log.auditLogId) }}"
+            class="bg-blue-500 text-white px-5 py-3 rounded mr-2 hover:bg-blue-600">View</a>
+        </td>
       </tr>
       {% else %}
       <tr>

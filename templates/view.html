@@ -1,0 +1,70 @@
+<!-- templates/view.html -->
+{% extends "base.html" %}
+
+{% block title %}View Log{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-6 pb-10">
+    <h2 class="text-3xl font-bold pb-5">View Log</h2>
+    <div class="mb-4">
+        <p class="block text-gray-700 font-bold">Audit ID</p>
+        <p class="block">{{ audit_log.auditLogId }}</p>
+    </div>
+    <div class="mb-4">
+        <p class="block text-gray-700 font-bold">Audit Type</p>
+        <p class="block">{{ audit_log.auditTypeName }}</p>
+    </div>
+        <div class="mb-4">
+        <p class="block text-gray-700 font-bold">Action By</p>
+        <p class="block">{{ audit_log.actionBy }}</p>
+    </div>
+    <div class="mb-4">
+        <p class="block text-gray-700 font-bold">Date</p>
+        <p class="block">{{ audit_log.date }}</p>
+    </div>
+    <div class="mb-4">
+        <!-- <p class="block text-gray-700 font-bold">Audit Content</p> -->
+        <div class="border border-gray-200">
+            <button type="button" id="accordion-header"
+                class="w-full flex justify-between items-center px-2 py-4 focus:outline-none" data-target="#panel1">
+                <span id="accordion-header-text" class="text-gray-700 font-bold">Show audit content</span>
+                <svg class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            <div id="panel1" class="accordion-content hidden px-4 pb-4">
+                <p class="block whitespace-pre-line">{{ audit_log.auditContent }}</p>
+            </div>
+        </div>
+    </div>
+    <button type="button" onclick="window.location.href=`{{ url_for('logs') }}`"
+        class="bg-red-500 text-white px-5 py-4 rounded hover:bg-red-600">
+        Back
+    </button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    const accordionHeader = document.getElementById('accordion-header');
+    const accordionHeaderText = document.getElementById('accordion-header-text')
+
+    accordionHeader.addEventListener('click', () => {
+        const targetSelector = accordionHeader.getAttribute('data-target');
+        const panel = document.querySelector(targetSelector);
+        const arrowIcon = accordionHeader.querySelector('svg');
+
+        if (panel.classList.contains('hidden')) {
+            panel.classList.remove('hidden');
+            arrowIcon.classList.add('rotate-180');
+            accordionHeaderText.innerText = "Hide audit content";
+        } else {
+            panel.classList.add('hidden');
+            arrowIcon.classList.remove('rotate-180');
+            accordionHeaderText.innerText = "Show audit content";
+        }
+    });
+</script>
+{% endblock %}
