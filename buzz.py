@@ -1,15 +1,27 @@
-import RPi.GPIO as GPIO
-import time
+# from gpiozero import Buzzer
+# from time import sleep
 
-# Set up GPIO
-BUZZER_PIN = 18
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(BUZZER_PIN, GPIO.OUT)
+# bz = Buzzer(18)
 
-def buzz(seconds: float = 0.2):
+# def buzz(seconds=0.2):
+#     bz.on()
+#     sleep(seconds)
+#     bz.off()
+
+from gpiozero import Buzzer
+
+def create_buzzer():
+    global bz
     try:
-        GPIO.output(BUZZER_PIN, GPIO.HIGH)  # Turn on the buzzer
-        time.sleep(seconds)
-        GPIO.output(BUZZER_PIN, GPIO.LOW)  # Turn off the buzzer
-    finally:
-        GPIO.cleanup()  # Clean up GPIO
+        bz = Buzzer(18, initial_value=False)
+    except Exception as e:
+        print(f"Buzzer init error: {e}")
+        bz = None
+
+def cleanup_gpio():
+    if bz:
+        bz.close()
+    
+def buzz():
+    if bz:
+        bz.beep(on_time=0.2, off_time=0.2, n=1)

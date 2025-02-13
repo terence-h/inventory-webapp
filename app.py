@@ -1,6 +1,7 @@
 # app.py
-from flask import Flask, Response, render_template, redirect, send_file, session, url_for, request, flash, jsonify
-from flask_socketio import SocketIO, emit
+import atexit
+from flask import Flask, Response, render_template, redirect, session, url_for, request, flash, jsonify
+from flask_socketio import SocketIO
 from flask_login import LoginManager, login_user, login_required, logout_user, UserMixin
 from picamera2 import Picamera2
 from pyzbar.pyzbar import decode
@@ -11,13 +12,16 @@ import requests
 import json
 import base64
 
-from buzz import buzz
+from buzz import buzz, cleanup_gpio, create_buzzer
 from generate_qr_code import generate_qr_code
+
+atexit.register(cleanup_gpio)
+create_buzzer()
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Replace with a secure key
 
-socketio = SocketIO(app, async_mode='threading')
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -327,6 +331,7 @@ def generateqr():
 @app.route('/video_feed')
 @login_required
 def video_feed():
+    # picam2.start()
     return Response(gen_frames(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
@@ -355,7 +360,6 @@ def gen_frames():
                 mfg_expiry_original = qr_data.get('mfgExpiryDate', '')
                 mfg_date = convert_to_input_date_format(mfg_date_original)
                 mfg_expiry = convert_to_input_date_format(mfg_expiry_original) if mfg_expiry_original else ''
-
                 valid_qr_detected = True
 
             except json.JSONDecodeError:
@@ -404,6 +408,6 @@ if __name__ == '__main__':
     try:
         # app.run(host='0.0.0.0', port=5000)
         # threading.Thread(target=background_gen_frames, daemon=True).start()
-        socketio.run(app, host='0.0.0.0', port=5000)
+        socketio.run(app, debug=True, host='0.0.0.0', port=5000, use_reloader=False)
     finally:
         picam2.close()
