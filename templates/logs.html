@@ -86,12 +86,12 @@
 <!-- Pagination Controls -->
 <div class="flex justify-center items-center mt-4">
   {% if current_page > 1 %}
-  <a href="{{ url_for('index', **dict(request.args.to_dict(), page=current_page-1)) }}"
+  <a href="{{ url_for('logs', **dict(request.args.to_dict(), page=current_page-1)) }}"
     class="px-5 py-4 bg-gray-300 rounded mr-2">Previous</a>
   {% endif %}
   <span class="px-4 py-2">Page {{ current_page }} of {{ total_pages }}</span>
   {% if current_page < total_pages %} <a
-    href="{{ url_for('index', **dict(request.args.to_dict(), page=current_page+1)) }}"
+    href="{{ url_for('logs', **dict(request.args.to_dict(), page=current_page+1)) }}"
     class="px-5 py-4 bg-gray-300 rounded ml-2">Next</a>
     {% endif %}
 </div>
