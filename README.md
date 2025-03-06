@@ -1,7 +1,7 @@
 # inventory-webapp
 
 ## Backend services repo available here
-https://github.com/terence-h/inventory-server/tree/develop
+https://github.com/terence-h/inventory-server
 
 ## Run this command whenever there's changes
 npx @tailwindcss/cli -i ./static/css/input.css -o ./static/css/output.css --watch
