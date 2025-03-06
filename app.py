@@ -1,5 +1,6 @@
 # app.py
 import atexit
+import datetime
 from flask import Flask, Response, render_template, redirect, session, url_for, request, flash, jsonify
 from flask_socketio import SocketIO
 from flask_login import LoginManager, login_user, login_required, logout_user, UserMixin
@@ -206,6 +207,72 @@ def add():
     categories = categories_response.json() if categories_response.status_code == 200 else []
 
     return render_template('add.html', categories=categories)
+
+@app.route('/view/<productId>', methods=['GET'])
+@login_required
+def view(productId):
+    # Fetch existing product data
+    response = requests.get(f'{API_URL}/Product/getProduct/{productId}')
+    if response.status_code == 200:
+        product = response.json()
+    else:
+        flash('Product not found.', 'danger')
+        return redirect(url_for('index'))
+    
+    categories_response = requests.get(f'{API_URL}/Category/getcategories')
+    categories = categories_response.json() if categories_response.status_code == 200 else []
+
+    year = request.args.get('year', datetime.datetime.now().year)
+
+    try:
+        year = int(year)
+    except ValueError:
+        year = datetime.datetime.now().year
+
+    audit_logs_response = requests.get(f'{API_URL}/Audit/getAuditLogByProductId/{productId}', params={'year': year})
+    audit_logs = audit_logs_response.json() if audit_logs_response.status_code == 200 else []
+
+    # Filter and parse the data for the selected year.
+    filtered_data = []
+    for item in audit_logs:
+        dt = datetime.datetime.strptime(item["date"], "%d/%m/%Y %H:%M:%S")
+        item["parsed_date"] = dt
+        filtered_data.append(item)
+
+    # Group by month, selecting the record with the latest date in that month.
+    monthly_data = {}
+    for item in filtered_data:
+        month = item["parsed_date"].month
+        if month not in monthly_data or item["parsed_date"] > monthly_data[month]["parsed_date"]:
+            monthly_data[month] = item
+
+
+    # Determine the current year and month.
+    current_year = datetime.datetime.now().year
+    current_month = datetime.datetime.now().month
+
+    # Set max_month based on the selected year.
+    if year == current_year:
+        max_month = current_month
+    else:
+        max_month = 12
+    # Prepare data for the chart: list of month labels and corresponding quantities.
+    months = []
+    quantities = []
+    prev_quantity = 0  # Default to 0 if no data in the beginning
+
+    for month in range(1, max_month + 1):
+        # Month label in abbreviated format (e.g., Jan, Feb, etc.)
+        months.append(datetime.date(1900, month, 1).strftime('%b'))
+        
+        # If data exists for the month, update prev_quantity; otherwise, use the previous month quantity.
+        if month in monthly_data:
+            prev_quantity = monthly_data[month]["quantity"]
+        
+        quantities.append(prev_quantity)
+
+    return render_template('detail.html', product=product, categories=categories, months=months, quantities=quantities, year=year)
+
 
 @app.route('/edit/<productId>', methods=['GET', 'POST'])
 @login_required

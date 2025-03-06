@@ -125,6 +125,8 @@
         </td>
         <!-- <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.addedOn }}</td> -->
         <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+          <a href="{{ url_for('view', productId=product.productId) }}"
+            class="bg-blue-500 text-white px-5 py-3 rounded mr-2 hover:bg-blue-600">View</a>
           <a href="{{ url_for('edit', productId=product.productId) }}"
             class="bg-blue-500 text-white px-5 py-3 rounded mr-2 hover:bg-blue-600">Edit</a>
           <a href="#" data-product-id="{{ product.productId }}" data-product-no="{{ product.productNo }}"

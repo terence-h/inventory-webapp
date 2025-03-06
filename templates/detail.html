@@ -1,0 +1,135 @@
+<!-- templates/view.html -->
+{% extends "base.html" %}
+
+{% block title %}View Product{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-28 py-6 pb-10">
+    <h2 class="text-3xl font-bold pb-5">View Product</h2>
+    <div class="mb-4">
+        <p class="block text-gray-700 font-bold">Product No.</p>
+        <p class="block">{{ product.productNo }}</p>
+    </div>
+    <div class="mb-4">
+        <p class="block text-gray-700 font-bold">Product Name</p>
+        <p class="block">{{ product.productName }}</p>
+    </div>
+    <div class="mb-4">
+        <p class="block text-gray-700 font-bold">Manufacturer</p>
+        <p class="block">{{ product.manufacturer }}</p>
+    </div>
+    <div class="mb-4">
+        <p class="block text-gray-700 font-bold">Batch No.</p>
+        <p class="block">{{ product.batchNo }}</p>
+    </div>
+    <div class="mb-4">
+        <p class="block text-gray-700 font-bold">Quantity</p>
+        <p class="block">{{ product.quantity }}</p>
+    </div>
+    <div class="mb-4">
+        <p class="block text-gray-700 font-bold">Category</p>
+        <p class="block">{{ product.categoryName }}</p>
+    </div>
+    <div class="mb-4">
+        <p class="block text-gray-700 font-bold">Manufactured Date</p>
+        <p class="block">{{ product.mfgDate }}</p>
+    </div>
+    <div class="mb-4">
+        <p class="block text-gray-700 font-bold">Expiry Date</p>
+        <p class="block">{{ product.mfgExpiryDate }}</p>
+    </div>
+    <div class="mb-4">
+        <p class="block text-gray-700 font-bold">Product Chart</p>
+        <div class="border border-gray-200">
+            <button type="button" id="accordion-header"
+                class="w-full flex justify-between items-center px-2 py-4 focus:outline-none" data-target="#panel1">
+                <span id="accordion-header-text" class="text-gray-700 font-bold">Show product chart</span>
+                <svg class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            <div id="panel1" class="accordion-content hidden px-4 pb-4">
+                <form method="get" action="/view/{{ product.productId }}">
+                    <div class="mb-2 flex text-center align-middle gap-2">
+                        <label for="year" class="block text-sm font-medium text-gray-700">Year to View:</label>
+                        <input type="number" id="year" name="year" value="{{ year }}"
+                          class="px-3 py-3 border rounded border-gray-700">
+
+                        <button type="submit" class="px-5 py-3 bg-blue-500 text-white rounded hover:bg-blue-600">Update Chart</button>
+                    </div>
+                </form>
+
+                <!-- Canvas element for the chart -->
+                <canvas id="lineChart" width="600" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <button type="button" onclick="window.location.href=`{{ url_for('index') }}`"
+        class="bg-red-500 text-white px-5 py-4 rounded hover:bg-red-600">
+        Back
+    </button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    const accordionHeader = document.getElementById('accordion-header');
+    const accordionHeaderText = document.getElementById('accordion-header-text')
+
+    accordionHeader.addEventListener('click', () => {
+        const targetSelector = accordionHeader.getAttribute('data-target');
+        const panel = document.querySelector(targetSelector);
+        const arrowIcon = accordionHeader.querySelector('svg');
+
+        if (panel.classList.contains('hidden')) {
+            panel.classList.remove('hidden');
+            arrowIcon.classList.add('rotate-180');
+            accordionHeaderText.innerText = "Hide product chart";
+        } else {
+            panel.classList.add('hidden');
+            arrowIcon.classList.remove('rotate-180');
+            accordionHeaderText.innerText = "Show product chart";
+        }
+    });
+
+    // Get chart data from the Flask context using Jinja2's tojson filter.
+    const monthLabels = {{ months|tojson }};
+    const quantityData = {{ quantities|tojson }};
+
+    const ctx = document.getElementById('lineChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: monthLabels,
+            datasets: [{
+                label: 'Quantity',
+                data: quantityData,
+                fill: false,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1,
+                pointRadius: 6,
+                pointHoverRadius: 8
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Quantity'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Month'
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
