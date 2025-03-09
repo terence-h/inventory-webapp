@@ -39,17 +39,17 @@
         <p class="block">{{ product.mfgExpiryDate }}</p>
     </div>
     <div class="mb-4">
-        <p class="block text-gray-700 font-bold">Product Chart</p>
+        <p class="block text-gray-700 font-bold">End of Month Quantity History</p>
         <div class="border border-gray-200">
             <button type="button" id="accordion-header"
                 class="w-full flex justify-between items-center px-2 py-4 focus:outline-none" data-target="#panel1">
-                <span id="accordion-header-text" class="text-gray-700 font-bold">Show product chart</span>
-                <svg class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor"
+                <span id="accordion-header-text" class="text-gray-700 font-bold"></span>
+                <svg class="w-5 h-5 transition-transform duration-200 rotate-180" fill="none" stroke="currentColor"
                     viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
             </button>
-            <div id="panel1" class="accordion-content hidden px-4 pb-4">
+            <div id="panel1" class="accordion-content px-4 pb-4">
                 <form method="get" action="/view/{{ product.productId }}">
                     <div class="mb-2 flex text-center align-middle gap-2">
                         <label for="year" class="block text-sm font-medium text-gray-700">Year to View:</label>
@@ -86,11 +86,11 @@
         if (panel.classList.contains('hidden')) {
             panel.classList.remove('hidden');
             arrowIcon.classList.add('rotate-180');
-            accordionHeaderText.innerText = "Hide product chart";
+            accordionHeaderText.innerText = "";
         } else {
             panel.classList.add('hidden');
             arrowIcon.classList.remove('rotate-180');
-            accordionHeaderText.innerText = "Show product chart";
+            accordionHeaderText.innerText = "Show";
         }
     });
 

@@ -6,7 +6,11 @@ https://github.com/terence-h/inventory-server
 ## Run this command whenever there's changes
 npx @tailwindcss/cli -i ./static/css/input.css -o ./static/css/output.css --watch
 
-## Setup
+## Setup (automatic)
+chmod +x run.sh
+./run.sh
+
+## Setup (manual)
 sudo apt install python3-picamera2 libzbar0 -y
 python -m venv --system-site-packages .venv
 source .venv/bin/activate
