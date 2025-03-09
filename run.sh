@@ -8,6 +8,11 @@ if [ -d ".venv" ]; then
     python app.py
 else
     echo ".venv not found. Installing dependencies and setting up the environment."
+    sudo apt install -y ca-certificates curl gnupg
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/nodesource.gpg
+    echo "deb [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
+    sudo apt update -y
+    sudo apt install nodejs -y
     sudo apt install python3-picamera2 libzbar0 -y
     python -m venv --system-site-packages .venv
     source .venv/bin/activate
