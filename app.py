@@ -1,4 +1,5 @@
 # app.py
+import argparse
 import atexit
 import datetime
 from flask import Flask, Response, render_template, redirect, session, url_for, request, flash, jsonify
@@ -44,7 +45,9 @@ picam2.configure(picam2.create_preview_configuration(main={"format": "RGB888", "
 picam2.start()
 
 # API Server URL
-API_URL = 'http://192.168.18.90:5201/api'  # Replace with your backend API URL
+parser = argparse.ArgumentParser(description="Backend API URL.")
+parser.add_argument('--ip', type=str, default='192.168.18.90:5201', help="IP address for the API URL.")
+API_URL = 'http://{args.ip}/api'
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():

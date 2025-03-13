@@ -5,7 +5,7 @@
 if [ -d ".venv" ]; then
     echo ".venv exists. Activating and running the application."
     source .venv/bin/activate
-    python app.py
+    python app.py --ip 192.168.18.90:5201
 else
     echo ".venv not found. Installing dependencies and setting up the environment."
     sudo apt install -y ca-certificates curl gnupg
@@ -18,5 +18,5 @@ else
     source .venv/bin/activate
     pip install Pillow pyzbar Flask flask-login flask-socketio eventlet python-dateutil qrcode[pil]
     npm install
-    python app.py
+    python app.py --ip 192.168.18.90:5201
 fi
