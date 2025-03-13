@@ -47,7 +47,10 @@ picam2.start()
 # API Server URL
 parser = argparse.ArgumentParser(description="Backend API URL.")
 parser.add_argument('--ip', type=str, default='192.168.18.90:5201', help="IP address for the API URL.")
-API_URL = 'http://{args.ip}/api'
+args = parser.parse_args()
+API_URL = f'http://{args.ip}/api'
+
+print(f'Backend API URL running at: {API_URL}')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
