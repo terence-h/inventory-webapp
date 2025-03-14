@@ -45,9 +45,9 @@ picam2.configure(picam2.create_preview_configuration(main={"format": "RGB888", "
 picam2.start()
 
 # API Server URL
-parser = argparse.ArgumentParser(description="Backend API URL.")
-parser.add_argument('--ip', type=str, default='192.168.18.90:5201', help="IP address for the API URL.")
-args = parser.parse_args()
+args_parser = argparse.ArgumentParser(description="Backend API URL.")
+args_parser.add_argument('--ip', type=str, default='192.168.18.90:5201', help="IP address for the API URL.")
+args = args_parser.parse_args()
 API_URL = f'http://{args.ip}/api'
 
 print(f'Backend API URL running at: {API_URL}')
@@ -422,19 +422,23 @@ def gen_frames():
 
         for obj in decoded_objects:
             try:
-                qr_data = json.loads(obj.data.decode('utf-8'))
-                productNo = qr_data.get('productNo')
-                productName = qr_data.get('productName')
-                manufacturer = qr_data.get('manufacturer')
-                batch_no = qr_data.get('batchNo')
-                quantity = qr_data.get('quantity')
-                category_id = qr_data.get('categoryId')
-                mfg_date_original = qr_data.get('mfgDate')
-                mfg_expiry_original = qr_data.get('mfgExpiryDate', '')
-                mfg_date = convert_to_input_date_format(mfg_date_original)
-                mfg_expiry = convert_to_input_date_format(mfg_expiry_original) if mfg_expiry_original else ''
-                valid_qr_detected = True
-
+                decoded_data = json.loads(obj.data.decode('utf-8'))
+                if isinstance(decoded_data, dict):
+                    qr_data = decoded_data
+                    productNo = qr_data.get('productNo')
+                    productName = qr_data.get('productName')
+                    manufacturer = qr_data.get('manufacturer')
+                    batch_no = qr_data.get('batchNo')
+                    quantity = qr_data.get('quantity')
+                    category_id = qr_data.get('categoryId')
+                    mfg_date_original = qr_data.get('mfgDate')
+                    mfg_expiry_original = qr_data.get('mfgExpiryDate', '')
+                    mfg_date = convert_to_input_date_format(mfg_date_original)
+                    mfg_expiry = convert_to_input_date_format(mfg_expiry_original) if mfg_expiry_original else ''
+                    valid_qr_detected = True
+                else:
+                    # Handle the case where the data is not a dictionary
+                    print("QR Code decoded data is not a valid JSON object:", decoded_data)
             except json.JSONDecodeError:
                 error = 'Invalid QR Code'
 
